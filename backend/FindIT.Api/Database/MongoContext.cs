@@ -1,6 +1,6 @@
 using MongoDB.Driver;
 
-namespace MyApp.Api.Database;
+namespace FindIT.Api.Database;
 
 public class MongoContext
 {

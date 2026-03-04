@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace MyApp.Api.Models;
+namespace FindIT.Api.Models;
 
 public class User
 {
