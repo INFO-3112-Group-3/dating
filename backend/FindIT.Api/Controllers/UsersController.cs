@@ -1,6 +1,7 @@
 using FindIT.Api.Models;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using BCrypt.Net;
 
 namespace FindIT.Api.Controllers;
 
@@ -15,43 +16,79 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
-    // GET: api/users
+    // GET: api/users : Returns all users
     [HttpGet]
-    public async Task<IActionResult> GetAll() =>
-        Ok(await _context.GetAsync());
+    public async Task<IActionResult> GetAll() => Ok(await _context.GetAll());
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id)
+    // GET: api/users/username/{username} : Returns a user by their username
+    [HttpGet("username/{username}")]
+    public async Task<IActionResult> GetByUser(string username)
     {
-        var user = await _context.GetAsync(id);
+        var user = await _context.GetUserByUsername(username);
         return user is null ? NotFound() : Ok(user);
     }
 
-    // POST: api/users
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] User newUser)
+    // GET: api/users/email/{email} : Returns a user by their email
+    [HttpGet("email/{email}")]
+    public async Task<IActionResult> GetByEmail(string email)
     {
-        if (string.IsNullOrWhiteSpace(newUser.Username) ||
-            string.IsNullOrWhiteSpace(newUser.Email) ||
-            string.IsNullOrWhiteSpace(newUser.Password))
-        {
-            return BadRequest("Username, Email, and Password are required.");
-        }
-
-        await _context.CreateAsync(newUser);
-        return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, newUser);
+        var user = await _context.GetUserByEmail(email);
+        return user is null ? NotFound() : Ok(user);
     }
 
-    [HttpPost("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] User updatedUser)
+    // POST: api/users : Creates a new user
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] User newUser)
     {
-        var existingUser = await _context.GetAsync(id);
-        if (existingUser is null)
-        {
-            return NotFound();
-        }
-        updatedUser.Id = existingUser.Id; // Ensure the ID remains unchanged
-        await _context.UpdateAsync(id, updatedUser);
+        // check if username or email already exists
+        if (await _context.GetUserByUsername(newUser.Username) != null )
+            return BadRequest("Username already exists.");
+        if (await _context.GetUserByEmail(newUser.Email) != null )
+            return BadRequest("Email already exists.");
+
+        // Simple Validation
+        if (string.IsNullOrEmpty(newUser.Password)) return BadRequest("Password required.");
+
+        await _context.AddNewUser(newUser);
+
+        return CreatedAtAction(nameof(GetByUser), new { username = newUser.Username }, newUser);
+    }
+
+    // POST: api/users/login : Login use Email and Password to check authentication password
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] User loginRequest)
+    {
+        var user = await _context.GetUserByEmail(loginRequest.Email);
+        if (user == null) return Unauthorized("Invalid Email");
+
+        // Use BCrypt to verify the plain text password against the hashed one in DB
+        bool isValid = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password);
+
+        if (!isValid) return Unauthorized("Invalid Password");
+
+        return Ok(new { message = "Login successful!", id = user.Id, username = user.Username, email = user.Email });
+    }
+
+    // PUT: api/users/{username} : Updates an existing user by their username
+    [HttpPut("{username}")]
+    public async Task<IActionResult> Update(string username, [FromBody] User updatedUser)
+    {
+        var existingUser = await _context.GetUserByUsername(username);
+        if (existingUser is null) return NotFound();
+
+        updatedUser.Id = existingUser.Id;
+        await _context.UpdateUserByUsername(username, updatedUser);
+        return NoContent();
+    }
+
+    // DELETE: api/users/{username} : Deletes a user by their username
+    [HttpDelete("{username}")]
+    public async Task<IActionResult> Delete(string username)
+    {
+        var user = await _context.GetUserByUsername(username);
+        if (user == null) return NotFound();
+
+        await _context.DeleteUserByUsername(username);
         return NoContent();
     }
 }
