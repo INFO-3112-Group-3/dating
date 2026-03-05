@@ -1,46 +1,65 @@
 using FindIT.Api.Models;
+using FindIT.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("MongoDb"));
 
-builder.Services.AddSingleton<FindIT.Api.Database.MongoContext>();
-builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("FindITDatabase"));
+builder.Services.AddSingleton<UsersService>();
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+       options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // TODO: Change this to the actual origin of client
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseHttpsRedirection();
+app.MapControllers();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+
+
+
+
+
+
+
+
+//using MongoDB.Driver;
+//using MongoDB.Bson;
+//const string connectionUri = "mongodb+srv://db_admin:g3Ip5T3GVocOpTB5@finditdatabase.irmcyk0.mongodb.net/?appName=FindITDatabase";
+//var settings = MongoClientSettings.FromConnectionString(connectionUri);
+//// Set the ServerApi field of the settings object to set the version of the Stable API on the client
+//settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+//// Create a new client and connect to the server
+//var client = new MongoClient(settings);
+//// Send a ping to confirm a successful connection
+//try
+//{
+//    var result = client.GetDatabase("admin").RunCommand<BsonDocument>(new BsonDocument("ping", 1));
+//    Console.WriteLine("Pinged your deployment. You successfully connected to MongoDB!");
+//}
+//catch (Exception ex)
+//{
+//    Console.WriteLine(ex);
+//}
