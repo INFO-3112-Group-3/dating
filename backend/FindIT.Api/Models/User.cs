@@ -9,6 +9,7 @@ public class User
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
+    [BsonElement("Name")]
     public string Username { get; set; } = null!;
 
     public string Email { get; set; } = null!;
