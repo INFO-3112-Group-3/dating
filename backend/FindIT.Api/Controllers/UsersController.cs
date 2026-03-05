@@ -1,4 +1,5 @@
 using FindIT.Api.Models;
+using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FindIT.Api.Controllers;
@@ -7,24 +8,28 @@ namespace FindIT.Api.Controllers;
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
-    private readonly MongoContext _context;
+    private readonly UsersService _context;
 
-    public UsersController(MongoContext context)
+    public UsersController(UsersService context)
     {
         _context = context;
     }
 
     // GET: api/users
     [HttpGet]
-    public async Task<List<User>> GetAll()
+    public async Task<IActionResult> GetAll() =>
+        Ok(await _context.GetAsync());
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
     {
-        var collection = _context.GetCollection<User>("Users");
-        return await collection.Find(_ => true).ToListAsync();
+        var user = await _context.GetAsync(id);
+        return user is null ? NotFound() : Ok(user);
     }
 
     // POST: api/users
     [HttpPost]
-    public async Task<ActionResult<User>> Create([FromBody] User newUser)
+    public async Task<IActionResult> Create([FromBody] User newUser)
     {
         if (string.IsNullOrWhiteSpace(newUser.Username) ||
             string.IsNullOrWhiteSpace(newUser.Email) ||
@@ -33,9 +38,20 @@ public class UsersController : ControllerBase
             return BadRequest("Username, Email, and Password are required.");
         }
 
-        var collection = _context.GetCollection<User>("UsersCollection");
-        await collection.InsertOneAsync(newUser);
+        await _context.CreateAsync(newUser);
+        return CreatedAtAction(nameof(GetById), new { id = newUser.Id }, newUser);
+    }
 
-        return Ok(newUser);
+    [HttpPost("{id}")]
+    public async Task<IActionResult> Update(string id, [FromBody] User updatedUser)
+    {
+        var existingUser = await _context.GetAsync(id);
+        if (existingUser is null)
+        {
+            return NotFound();
+        }
+        updatedUser.Id = existingUser.Id; // Ensure the ID remains unchanged
+        await _context.UpdateAsync(id, updatedUser);
+        return NoContent();
     }
 }
