@@ -1,8 +1,6 @@
-using FindIT.Api.Database;
 using FindIT.Api.Models;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 
 namespace FindIT.Api.Controllers;
 
