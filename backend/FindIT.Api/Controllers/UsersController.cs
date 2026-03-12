@@ -51,7 +51,7 @@ public class UsersController : ControllerBase
 
         await _context.AddNewUser(newUser);
 
-        return CreatedAtAction(nameof(GetByUser), new { username = newUser.Username }, newUser);
+        return Ok("User creation successful!");
     }
 
     // POST: api/users/login : Login use Email and Password to check authentication password
@@ -78,7 +78,7 @@ public class UsersController : ControllerBase
 
         updatedUser.Id = existingUser.Id;
         await _context.UpdateUserByUsername(username, updatedUser);
-        return NoContent();
+        return Ok("Update successful!");
     }
 
     // DELETE: api/users/{username} : Deletes a user by their username
@@ -89,6 +89,6 @@ public class UsersController : ControllerBase
         if (user == null) return NotFound();
 
         await _context.DeleteUserByUsername(username);
-        return NoContent();
+        return Ok("Delete successful!");
     }
 }
