@@ -66,7 +66,7 @@ public class UsersController : ControllerBase
 
         if (!isValid) return Unauthorized("Invalid Password");
 
-        return Ok("Login successful!");
+        return Ok(new { id = user.Id, username = user.Username, email = user.Email });
     }
 
     // PUT: api/users/{username} : Updates an existing user by their username
