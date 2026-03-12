@@ -56,7 +56,7 @@ public class UsersController : ControllerBase
 
     // POST: api/users/login : Login use Email and Password to check authentication password
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] User loginRequest)
+    public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
     {
         var user = await _context.GetUserByEmail(loginRequest.Email);
         if (user == null) return Unauthorized("Invalid Email");
@@ -66,7 +66,7 @@ public class UsersController : ControllerBase
 
         if (!isValid) return Unauthorized("Invalid Password");
 
-        return Ok(new { message = "Login successful!", id = user.Id, username = user.Username, email = user.Email });
+        return Ok("Login successful!");
     }
 
     // PUT: api/users/{username} : Updates an existing user by their username
