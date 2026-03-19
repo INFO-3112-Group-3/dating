@@ -1,8 +1,6 @@
 using FindIT.Api.Models;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using BCrypt.Net;
-using GoogleMaps.LocationServices;
 
 namespace FindIT.Api.Controllers;
 
