@@ -48,6 +48,31 @@ public class UsersController : ControllerBase
         // Simple Validation
         if (string.IsNullOrEmpty(newUser.Password)) return BadRequest("Password required.");
 
+        if (newUser.City is not null && newUser.Region is not null)
+        {
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("User-Agent", "FindIT/1.0 (a_ramsden203976@fanshaweonline.ca)");
+
+            string query = Uri.EscapeDataString($"{newUser.City}, {newUser.Region}");
+            string url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1";
+
+            try
+            {
+                var response = await client.GetFromJsonAsync<List<NominatimResponse>>(url);
+
+                if (response != null && response.Count > 0)
+                {
+                    newUser.Latitude = double.Parse(response[0].Lat, System.Globalization.CultureInfo.InvariantCulture);
+                    newUser.Longitude = double.Parse(response[0].Lon, System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Geocoding failed: {ex.Message}");
+            }
+        }
+
         await _context.AddNewUser(newUser);
 
         return Ok("User creation successful!");
@@ -74,6 +99,31 @@ public class UsersController : ControllerBase
     {
         var existingUser = await _context.GetUserByUsername(username);
         if (existingUser is null) return NotFound();
+
+        if (updatedUser.City is not null && updatedUser.Region is not null && (updatedUser.City != existingUser.City || updatedUser.Region != existingUser.City))
+        {
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("User-Agent", "FindIT/1.0 (a_ramsden203976@fanshaweonline.ca)");
+
+            string query = Uri.EscapeDataString($"{updatedUser.City}, {updatedUser.Region}");
+            string url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1";
+
+            try
+            {
+                var response = await client.GetFromJsonAsync<List<NominatimResponse>>(url);
+
+                if (response != null && response.Count > 0)
+                {
+                    updatedUser.Latitude = double.Parse(response[0].Lat, System.Globalization.CultureInfo.InvariantCulture);
+                    updatedUser.Longitude = double.Parse(response[0].Lon, System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Geocoding failed: {ex.Message}");
+            }
+        }
 
         updatedUser.Id = existingUser.Id;
         updatedUser.Password = existingUser.Password;
