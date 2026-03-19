@@ -2,6 +2,7 @@ using FindIT.Api.Models;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using BCrypt.Net;
+using GoogleMaps.LocationServices;
 
 namespace FindIT.Api.Controllers;
 
@@ -49,6 +50,15 @@ public class UsersController : ControllerBase
         // Simple Validation
         if (string.IsNullOrEmpty(newUser.Password)) return BadRequest("Password required.");
 
+        // https://stackoverflow.com/questions/14354867/how-to-find-latitude-and-longitude-using-c-sharp
+        if (newUser.City is not null && newUser.Region is not null)
+        {
+            var locationService = new GoogleLocationService();
+            var point = locationService.GetLatLongFromAddress($"{newUser.City}, {newUser.Region}");
+            newUser.Latitude = point.Latitude;
+            newUser.Longitude = point.Longitude;
+        }
+
         await _context.AddNewUser(newUser);
 
         return Ok("User creation successful!");
@@ -77,6 +87,7 @@ public class UsersController : ControllerBase
         if (existingUser is null) return NotFound();
 
         updatedUser.Id = existingUser.Id;
+        updatedUser.Password = existingUser.Password;
         await _context.UpdateUserByUsername(username, updatedUser);
         return Ok("Update successful!");
     }
