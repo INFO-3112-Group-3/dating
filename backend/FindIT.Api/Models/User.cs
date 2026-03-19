@@ -12,6 +12,7 @@ public class User
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
+    public bool IsPaidUser { get; set; } = false;
     public string? City { get; set; } = null!;
     public string? Region { get; set; }
     public double? Latitude { get; set; }

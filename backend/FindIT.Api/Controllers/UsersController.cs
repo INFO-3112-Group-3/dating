@@ -42,22 +42,13 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CreateUser([FromBody] User newUser)
     {
         // check if username or email already exists
-        if (await _context.GetUserByUsername(newUser.Username) != null )
+        if (await _context.GetUserByUsername(newUser.Username) != null)
             return BadRequest("Username already exists.");
-        if (await _context.GetUserByEmail(newUser.Email) != null )
+        if (await _context.GetUserByEmail(newUser.Email) != null)
             return BadRequest("Email already exists.");
 
         // Simple Validation
         if (string.IsNullOrEmpty(newUser.Password)) return BadRequest("Password required.");
-
-        // https://stackoverflow.com/questions/14354867/how-to-find-latitude-and-longitude-using-c-sharp
-        if (newUser.City is not null && newUser.Region is not null)
-        {
-            var locationService = new GoogleLocationService();
-            var point = locationService.GetLatLongFromAddress($"{newUser.City}, {newUser.Region}");
-            newUser.Latitude = point.Latitude;
-            newUser.Longitude = point.Longitude;
-        }
 
         await _context.AddNewUser(newUser);
 
