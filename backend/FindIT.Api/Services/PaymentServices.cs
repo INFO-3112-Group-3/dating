@@ -44,7 +44,12 @@ namespace FindIT.Api.Services
                 return null;
             }
 
-            return await _subscriptionsCollection.Find(x => x.userID == user.Id && x.isActive).FirstOrDefaultAsync();
+            var subscription = await _subscriptionsCollection.Find(x => x.userID == user.Id).FirstOrDefaultAsync();
+            if (subscription == null)
+            {
+                return null;
+            }
+            return subscription;
         }
 
         // Get payment log by user ID ( return empty list if no payment log found )
@@ -117,7 +122,7 @@ namespace FindIT.Api.Services
         private bool IsValidExpiryDate(string expiryDate)
         {
             if (string.IsNullOrWhiteSpace(expiryDate)) return false;
-
+            // Expecting format MM/YY
             var parts = expiryDate.Split('/');
             if (parts.Length != 2) return false;
 
@@ -138,6 +143,7 @@ namespace FindIT.Api.Services
         // helper method to validate card number using Luhn algorithm
         public static bool IsValidLuhn(string cardNumber)
         {
+            // use 4242 4242 4242 4242 for testing, which is a valid test card number
             cardNumber = cardNumber.Replace(" ", "").Replace("-", "");
 
             if (string.IsNullOrWhiteSpace(cardNumber) || cardNumber.Length < 13)
