@@ -9,5 +9,9 @@
         public string DatabaseName { get; set; } = null!;
 
         public string UsersCollectionName { get; set; } = null!;
+
+        public string PaymentCollectionName { get; set; } = null!;
+
+        public string SubscriptionsCollectionName { get; set; } = null!;
     }
 }
