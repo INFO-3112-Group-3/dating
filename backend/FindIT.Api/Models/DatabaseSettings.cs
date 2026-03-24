@@ -13,5 +13,7 @@
         public string PaymentCollectionName { get; set; } = null!;
 
         public string SubscriptionsCollectionName { get; set; } = null!;
+
+        public string SkillTagsCollectionName { get; set; } = null!;
     }
 }

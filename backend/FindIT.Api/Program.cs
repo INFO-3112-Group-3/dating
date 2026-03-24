@@ -7,6 +7,7 @@ builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("M
 
 builder.Services.AddSingleton<UsersService>();
 builder.Services.AddSingleton<PaymentServices>();
+builder.Services.AddSingleton<SkillTagsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
