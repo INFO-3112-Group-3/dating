@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("MongoDb"));
 
 builder.Services.AddSingleton<UsersService>();
+builder.Services.AddSingleton<PaymentServices>();
+builder.Services.AddSingleton<SkillTagsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

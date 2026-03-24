@@ -141,4 +141,49 @@ public class UsersController : ControllerBase
         await _context.DeleteUserByUsername(username);
         return Ok("Delete successful!");
     }
+
+    // For skills and tags
+
+    // PATCH: api/users/{username}/skills: Partial update to add multiple skills to the user's skill list
+    [HttpPatch("{username}/skills")]
+    public async Task<IActionResult> AddSkills(string username, [FromBody] List<string> skills)
+    {
+        if (skills == null || !skills.Any())
+            return BadRequest("No skills provided.");
+
+        var user = await _context.GetUserByUsername(username);
+        if (user == null) return NotFound("User not found.");
+
+        await _context.AddSkillsByUsername(username, skills);
+
+        // Fetch the updated user to return the new list to the frontend
+        var updatedUser = await _context.GetUserByUsername(username);
+        return Ok(new
+        {
+            message = "Skills updated successfully.",
+            skills = updatedUser?.Skills
+        });
+    }
+
+    // PATCH: api/users/{username}/interests: Partial update to add multiple interests to the user's interest list
+    [HttpPatch("{username}/interests")]
+    public async Task<IActionResult> AddInterests(string username, [FromBody] List<string> interests)
+    {
+        if (interests == null || !interests.Any())
+            return BadRequest("No interests provided.");
+
+        var user = await _context.GetUserByUsername(username);
+        if (user == null) return NotFound("User not found.");
+
+        await _context.AddInterestsByUsername(username, interests);
+
+        var updatedUser = await _context.GetUserByUsername(username);
+        return Ok(new
+        {
+            message = "Interests updated successfully.",
+            interests = updatedUser?.Interests
+        });
+    }
+
+
 }

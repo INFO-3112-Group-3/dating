@@ -20,9 +20,9 @@ public class User
     public string? FirstName { get; set; } = null!;
     public string? LastName { get; set; } = null!;
     public string? Gender { get; set; } = null!;
-    public string? Interests { get; set; } = null!;
+    public List<string> Interests { get; set; } = new List<string>();
     public string? Occupation { get; set; } = null!;
     public string? Orientation { get; set; } = null!;
-    public string? Skills { get; set; } = null!;
+    public List<string> Skills { get; set; } = new List<string>();
     public string? Notes { get; set; } = null!;
 }

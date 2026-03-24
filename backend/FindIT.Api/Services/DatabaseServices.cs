@@ -60,6 +60,26 @@ namespace FindIT.Api.Services
         public async Task DeleteUserByEmail(string email) =>
             await _usersCollection.DeleteOneAsync(x => x.Email == email);
 
+        // For skills and tags
+
+        // Add multiple skills to user's profile by Username
+        public async Task AddSkillsByUsername(string username, List<string> skills)
+        {
+            // Filter by Username instead of Id
+            var filter = Builders<User>.Filter.Eq(u => u.Username, username);
+            var update = Builders<User>.Update.AddToSetEach(u => u.Skills, skills);
+            await _usersCollection.UpdateOneAsync(filter, update);
+        }
+
+        // Add multiple interests to user's profile by Username
+        public async Task AddInterestsByUsername(string username, List<string> interests)
+        {
+            // Filter by Username instead of Id
+            var filter = Builders<User>.Filter.Eq(u => u.Username, username);
+            var update = Builders<User>.Update.AddToSetEach(u => u.Interests, interests);
+            await _usersCollection.UpdateOneAsync(filter, update);
+        }
+
 
     }
 }
