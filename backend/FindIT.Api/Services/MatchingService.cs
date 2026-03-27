@@ -1,5 +1,6 @@
 ﻿using FindIT.Api.DTOs;
 using FindIT.Api.Entities;
+using FindIT.Api.Helpers;
 
 namespace FindIT.Api.Services;
 
@@ -21,7 +22,7 @@ public class MatchingService
         return databaseResults
             .Select(candidate => new MatchScore
             {
-                UserId = candidate.Id!,
+                Profile = candidate.ToPublicDto()!,
                 // Calculate compatibility for every user in the result set
                 TotalScore = CalculateScore(currentUser, candidate)
             })

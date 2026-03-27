@@ -2,7 +2,7 @@
 {
     public class MatchScore
     {
-        public string UserId { get; set; } = null!;
+        public UserPublicDto Profile { get; set; } = null!;
         public int TotalScore { get; set; }
     }
 }

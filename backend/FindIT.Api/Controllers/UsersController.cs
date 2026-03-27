@@ -1,5 +1,6 @@
 using FindIT.Api.DTOs;
 using FindIT.Api.Entities;
+using FindIT.Api.Helpers;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,23 @@ public class UsersController : ControllerBase
         _usersService = usersService;
         _geocodingService = geocodingService;
         _matchingService = matchingService;
+    }
+
+    /// <summary>
+    /// Retrieves a user by their unique identifier.
+    /// </summary>
+    /// <remarks>The returned user data is mapped to a public data transfer object to prevent exposure of
+    /// sensitive information such as password hashes or email addresses.</remarks>
+    /// <param name="id">The unique identifier of the user to retrieve. Cannot be null or empty.</param>
+    /// <returns>An <see cref="IActionResult"/> containing the user data if found; otherwise, a NotFound result.</returns>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var user = await _usersService.GetByIdAsync(id);
+        if (user == null) return NotFound();
+
+        // Map to Public DTO so we don't leak PasswordHash or Email
+        return Ok(user.ToPublicDto());
     }
 
     /// <summary>
@@ -64,7 +82,7 @@ public class UsersController : ControllerBase
             return Unauthorized("Invalid credentials.");
 
         // IMPORTANT: We use a Public DTO here to ensure the PasswordHash never leaves the server.
-        var userDto = MapToPublicDto(user);
+        var userDto = user.ToPublicDto();
 
         // TODO: Replace "dummy-token-for-now" with a real JWT implementation
         // Not extremely necessary, but if we have time
@@ -100,6 +118,22 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Deletes the user with the specified identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to delete. Cannot be null.</param>
+    /// <returns>A 204 No Content response if the user was successfully deleted; otherwise, a 404 Not Found response if the user
+    /// does not exist.</returns>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var user = await _usersService.GetByIdAsync(id);
+        if (user == null) return NotFound();
+
+        await _usersService.DeleteAsync(id);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Retrieves a ranked list of potential matches for a specific user.
     /// </summary>
     /// <param name="id">The ID of the user seeking matches.</param>
@@ -118,20 +152,4 @@ public class UsersController : ControllerBase
 
         return Ok(scores);
     }
-
-    /// <summary>
-    /// Maps an internal 'User' entity to a 'UserPublicDto'.
-    /// Essential for security to prevent internal fields (like PasswordHash) from being serialized.
-    /// </summary>
-    private static UserPublicDto MapToPublicDto(User user) => new()
-    {
-        Id = user.Id!,
-        Username = user.Username,
-        FirstName = user.FirstName,
-        Gender = user.Gender,
-        Age = user.Age,
-        City = user.City,
-        Interests = user.Interests,
-        Skills = user.Skills
-    };
 }
