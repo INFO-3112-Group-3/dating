@@ -15,6 +15,7 @@ public static class MappingExtensions
             Username = user.Username,
             FirstName = user.FirstName,
             Gender = user.Gender,
+            DateOfBirth = user.DateOfBirth,
             Age = user.Age,
             PreferredContact = user.PreferredContact,
             ContactIdentifier = user.ContactIdentifier,

@@ -60,7 +60,8 @@ public class UsersController : ControllerBase
             Username = request.Username,
             Email = request.Email,
             FirstName = request.FirstName,
-            LastName = request.LastName
+            LastName = request.LastName,
+            DateOfBirth = request.DateOfBirth,
         };
 
         // Note: Password hashing occurs inside the service layer

@@ -1,5 +1,7 @@
+using FindIT.Api.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace FindIT.Api.Entities;
 
@@ -22,12 +24,21 @@ public class User
     [BsonRepresentation(BsonType.String)]
     public Gender Gender { get; set; } = Gender.NotSpecified;
     [BsonRequired]
+    [JsonConverter(typeof(DateOnlyJsonConverter))]
     public DateTime DateOfBirth { get; set; }
 
     // Calculated property - automatically calculates age based on date of birth
     [BsonIgnore]
-    public int Age => DateTime.Today.Year - DateOfBirth.Year -
-                   (DateTime.Today < DateOfBirth.AddYears(DateTime.Today.Year - DateOfBirth.Year) ? 1 : 0);
+    public int Age
+    {
+        get
+        {
+            DateTime today = DateTime.UtcNow;
+            int age = today.Year - DateOfBirth.Year;
+            if (DateOfBirth.Date > today.AddYears(-age)) age--;
+            return age;
+        }
+    }
 
     public ContactMethod PreferredContact { get; set; } = ContactMethod.Email;
     public string? ContactIdentifier { get; set; }

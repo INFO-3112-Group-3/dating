@@ -1,4 +1,6 @@
 ﻿using FindIT.Api.Entities;
+using FindIT.Api.Models;
+using System.Text.Json.Serialization;
 
 namespace FindIT.Api.DTOs;
 
@@ -10,7 +12,8 @@ public class UpdateUserDto
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public Gender? Gender { get; set; }
-    public int? Age { get; set; }
+    [JsonConverter(typeof(DateOnlyJsonConverter))]
+    public DateTime? DateOfBirth { get; set; }
     public string? City { get; set; }
     public string? Region { get; set; }
     public ContactMethod? PreferredContact { get; set; }

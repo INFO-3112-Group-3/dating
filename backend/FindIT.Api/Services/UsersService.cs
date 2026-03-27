@@ -85,8 +85,8 @@ public class UsersService
         if (updates.Gender.HasValue)
             updateDefinitions.Add(updateBuilder.Set(u => u.Gender, updates.Gender.Value));
 
-        if (updates.Age.HasValue)
-            updateDefinitions.Add(updateBuilder.Set(u => u.Age, updates.Age.Value));
+        if (updates.DateOfBirth != null)
+            updateDefinitions.Add(updateBuilder.Set(u => u.DateOfBirth, updates.DateOfBirth));
 
         if (updates.PreferredContact.HasValue)
             updateDefinitions.Add(updateBuilder.Set(u => u.PreferredContact, updates.PreferredContact.Value));
