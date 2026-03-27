@@ -1,10 +1,7 @@
 using FindIT.Api.Models;
 using FindIT.Api.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
