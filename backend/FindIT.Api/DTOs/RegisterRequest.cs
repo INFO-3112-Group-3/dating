@@ -1,5 +1,6 @@
 ﻿namespace FindIT.Api.DTOs;
 
+// This DTO is used for user registration. It includes necessary fields for creating a new user account.
 public class RegisterRequest
 {
     public string Username { get; set; } = null!;

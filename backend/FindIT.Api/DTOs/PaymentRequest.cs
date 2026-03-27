@@ -2,6 +2,7 @@
 
 namespace FindIT.Api.DTOs;
 
+// This DTO represents the data needed to process a payment.
 public class PaymentRequest
 {
     [Required]
