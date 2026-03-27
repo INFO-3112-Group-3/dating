@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace FindIT.Api.Models
+namespace FindIT.Api.Entities
 {
     public class SkillTags
     {

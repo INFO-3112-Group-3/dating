@@ -1,52 +1,53 @@
-﻿using FindIT.Api.Models;
+﻿using FindIT.Api.DTOs;
 using FindIT.Api.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FindIT.Api.Controllers
+namespace FindIT.Api.Controllers;
+
+[ApiController]
+[Route("api/payments")]
+public class PaymentController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class PaymentController : ControllerBase
+    private readonly PaymentService _paymentService;
+
+    public PaymentController(PaymentService paymentService)
     {
-        private readonly PaymentServices _context;
+        _paymentService = paymentService;
+    }
 
-        public PaymentController(PaymentServices context)
+    [HttpGet("subscribers/active")]
+    public async Task<IActionResult> GetAllActiveSubscribers()
+    {
+        var results = await _paymentService.GetActiveSubscribersAsync();
+        return Ok(results);
+    }
+
+    [HttpGet("status/{userId}")]
+    public async Task<IActionResult> GetSubscriptionStatus(string userId)
+    {
+        var result = await _paymentService.GetSubscriptionStatusByIdAsync(userId);
+        return result is null ? NotFound("No active subscription found.") : Ok(result);
+    }
+
+    [HttpGet("logs/{userId}")]
+    public async Task<IActionResult> GetPaymentLogs(string userId)
+    {
+        var result = await _paymentService.GetPaymentLogsByUserIdAsync(userId);
+        return Ok(result);
+    }
+
+    [HttpPost("process")]
+    public async Task<IActionResult> ProcessPayment([FromBody] PaymentRequest request)
+    {
+        // The [ApiController] attribute automatically handles basic 400 errors 
+        // for DataAnnotations in the DTO, but we check our logic here.
+        var success = await _paymentService.ProcessPaymentAsync(request);
+
+        if (!success)
         {
-            _context = context;
+            return BadRequest(new { message = "Payment failed. Please check your card details." });
         }
 
-        // GET: api/payment/active-subscribers : Returns all active subscribers
-        [HttpGet("active-subscribers")]
-        public async Task<IActionResult> GetAllActiveSubscribers()
-        {
-            var results = await _context.GetActiveSubscribersAsync();
-            return Ok(results);
-        }
-
-        // GET: api/payment/subscription-status/{userName} : Returns subscription status for a user
-        [HttpGet("subscription-status/{userName}")]
-        public async Task<IActionResult> GetSubscriptionStatus(string userName)
-        {
-            var result = await _context.GetSubscriptionsByUserNameAsync(userName);
-            return Ok(result);
-        }
-
-        // GET: api/payment/payment-logs/{userName} : Returns payment logs for a user
-        [HttpGet("payment-logs/{userName}")]
-        public async Task<IActionResult> GetPaymentLogs(string userName)
-        {
-            var result = await _context.GetPaymentLogsByUserNameAsync(userName);
-            return Ok(result);
-        }
-
-        // POST: api/payment/process : Process a payment
-        [HttpPost("process")]
-        public async Task<IActionResult> ProcessPayment([FromBody] PaymentRequest paymentRequest)
-        {
-            var result = await _context.ProcessPaymentAsync(paymentRequest);
-            return Ok(result);
-        }
-
+        return Ok(new { message = "Payment successful! Subscription activated." });
     }
 }

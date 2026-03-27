@@ -1,32 +1,31 @@
-﻿using FindIT.Api.Models;
+﻿using FindIT.Api.Entities;
 using FindIT.Api.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FindIT.Api.Controllers
+namespace FindIT.Api.Controllers;
+
+[ApiController]
+[Route("api/skills")]
+public class SkillTagsController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SkillTagsController : ControllerBase
+    private readonly SkillTagsService _skillService;
+
+    public SkillTagsController(SkillTagsService skillService)
     {
+        _skillService = skillService;
+    }
 
-        private readonly SkillTagsService _skillTagsService;
+    [HttpGet]
+    public async Task<List<SkillTags>> GetAll() => await _skillService.GetAsync();
 
-        public SkillTagsController(SkillTagsService skillTagsService)
-        {
-            _skillTagsService = skillTagsService;
-        }
+    [HttpGet("category/{category}")]
+    public async Task<List<SkillTags>> GetByCategory(string category) =>
+        await _skillService.GetByCategoryAsync(category);
 
-        // GET: api/skilltags : Returns all skill tags
-        [HttpGet]
-        public async Task<List<SkillTags>> Get() => await _skillTagsService.GetAsync();
-
-        // POST: api/skilltags : Creates a new skill tag
-        [HttpPost]
-        public async Task<IActionResult> Post(SkillTags newTag)
-        {
-            await _skillTagsService.CreateAsync(newTag);
-            return CreatedAtAction(nameof(Get), new { id = newTag.Id }, newTag);
-        }
+    [HttpPost]
+    public async Task<IActionResult> Create(SkillTags tag)
+    {
+        await _skillService.CreateAsync(tag);
+        return Ok("Skill added.");
     }
 }

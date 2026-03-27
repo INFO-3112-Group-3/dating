@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace FindIT.Api
+namespace FindIT.Api.Models
 {
     public class NominatimResponse
     {

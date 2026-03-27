@@ -1,24 +1,31 @@
-﻿using FindIT.Api.Models;
-using Microsoft.Extensions.Options;
+﻿using FindIT.Api.Entities;
 using MongoDB.Driver;
 
-namespace FindIT.Api.Services
+namespace FindIT.Api.Services;
+
+public class SkillTagsService
 {
-    public class SkillTagsService
+    private readonly IMongoCollection<SkillTags> _skillTagsCollection;
+
+    public SkillTagsService(IMongoDatabase database)
     {
-        private readonly IMongoCollection<SkillTags> _skillTagsCollection;
-
-        public SkillTagsService(IOptions<DatabaseSettings> databaseSettings)
-        {
-            var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
-            var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
-            _skillTagsCollection = mongoDatabase.GetCollection<SkillTags>(databaseSettings.Value.SkillTagsCollectionName);
-        }
-
-        // Get all skill tags
-        public async Task<List<SkillTags>> GetAsync() => await _skillTagsCollection.Find(_ => true).ToListAsync();
-
-        // Add a new skill tag
-        public async Task CreateAsync(SkillTags newTag) => await _skillTagsCollection.InsertOneAsync(newTag);
+        // Use the collection name string directly since we registered the DB in Program.cs
+        _skillTagsCollection = database.GetCollection<SkillTags>("SkillTags");
     }
+
+    // Get everything
+    public async Task<List<SkillTags>> GetAsync() =>
+        await _skillTagsCollection.Find(_ => true).ToListAsync();
+
+    // Get by category (useful for UI tabs like "Programming", "Design", etc.)
+    public async Task<List<SkillTags>> GetByCategoryAsync(string category) =>
+        await _skillTagsCollection.Find(x => x.Category == category).ToListAsync();
+
+    // Add a new tag
+    public async Task CreateAsync(SkillTags newTag) =>
+        await _skillTagsCollection.InsertOneAsync(newTag);
+
+    // Bulk create (handy for seeding your database the first time)
+    public async Task CreateMultipleAsync(List<SkillTags> tags) =>
+        await _skillTagsCollection.InsertManyAsync(tags);
 }

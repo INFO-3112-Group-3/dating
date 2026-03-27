@@ -1,189 +1,137 @@
-using FindIT.Api.Models;
+using FindIT.Api.DTOs;
+using FindIT.Api.Entities;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FindIT.Api.Controllers;
 
+/// <summary>
+/// REST Controller for User management. 
+/// Handles Authentication, Profile Updates, and Matchmaking requests.
+/// </summary>
 [ApiController]
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
-    private readonly UsersService _context;
+    private readonly UsersService _usersService;
+    private readonly IGeocodingService _geocodingService;
+    private readonly MatchingService _matchingService;
 
-    public UsersController(UsersService context)
+    /// <summary>
+    /// Dependencies are injected via the standard ASP.NET Core DI container.
+    /// </summary>
+    public UsersController(UsersService usersService, IGeocodingService geocodingService, MatchingService matchingService)
     {
-        _context = context;
+        _usersService = usersService;
+        _geocodingService = geocodingService;
+        _matchingService = matchingService;
     }
 
-    // GET: api/users : Returns all users
-    [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _context.GetAll());
-
-    // GET: api/users/username/{username} : Returns a user by their username
-    [HttpGet("username/{username}")]
-    public async Task<IActionResult> GetByUser(string username)
+    /// <summary>
+    /// Registers a new user. Performs a basic check for duplicate usernames.
+    /// </summary>
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var user = await _context.GetUserByUsername(username);
-        return user is null ? NotFound() : Ok(user);
-    }
-
-    // GET: api/users/email/{email} : Returns a user by their email
-    [HttpGet("email/{email}")]
-    public async Task<IActionResult> GetByEmail(string email)
-    {
-        var user = await _context.GetUserByEmail(email);
-        return user is null ? NotFound() : Ok(user);
-    }
-
-    // POST: api/users : Creates a new user
-    [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] User newUser)
-    {
-        // check if username or email already exists
-        if (await _context.GetUserByUsername(newUser.Username) != null)
+        // Validation: Prevent duplicate accounts
+        if (await _usersService.GetByUsernameAsync(request.Username) != null)
             return BadRequest("Username already exists.");
-        if (await _context.GetUserByEmail(newUser.Email) != null)
-            return BadRequest("Email already exists.");
 
-        // Simple Validation
-        if (string.IsNullOrEmpty(newUser.Password)) return BadRequest("Password required.");
-
-        if (newUser.City is not null && newUser.Region is not null)
+        var newUser = new User
         {
-            using var client = new HttpClient();
+            Username = request.Username,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName
+        };
 
-            client.DefaultRequestHeaders.Add("User-Agent", "FindIT/1.0 (a_ramsden203976@fanshaweonline.ca)");
-
-            string query = Uri.EscapeDataString($"{newUser.City}, {newUser.Region}");
-            string url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1";
-
-            try
-            {
-                var response = await client.GetFromJsonAsync<List<NominatimResponse>>(url);
-
-                if (response != null && response.Count > 0)
-                {
-                    newUser.Latitude = double.Parse(response[0].Lat, System.Globalization.CultureInfo.InvariantCulture);
-                    newUser.Longitude = double.Parse(response[0].Lon, System.Globalization.CultureInfo.InvariantCulture);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Geocoding failed: {ex.Message}");
-            }
-        }
-
-        await _context.AddNewUser(newUser);
-
-        return Ok("User creation successful!");
+        // Note: Password hashing occurs inside the service layer
+        await _usersService.CreateAsync(newUser, request.Password);
+        return Ok("Registration successful.");
     }
 
-    // POST: api/users/login : Login use Email and Password to check authentication password
+    /// <summary>
+    /// Authenticates a user. 
+    /// Securely verifies the password against the stored BCrypt hash.
+    /// </summary>
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _context.GetUserByEmail(loginRequest.Email);
-        if (user == null) return Unauthorized("Invalid Email");
+        var user = await _usersService.GetByEmailAsync(request.Email);
 
-        // Use BCrypt to verify the plain text password against the hashed one in DB
-        bool isValid = BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password);
+        // Verify input password against the hashed version in DB
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            return Unauthorized("Invalid credentials.");
 
-        if (!isValid) return Unauthorized("Invalid Password");
+        // IMPORTANT: We use a Public DTO here to ensure the PasswordHash never leaves the server.
+        var userDto = MapToPublicDto(user);
 
-        return Ok(new { id = user.Id, username = user.Username, email = user.Email });
+        // TODO: Replace "dummy-token-for-now" with a real JWT implementation
+        // Not extremely necessary, but if we have time
+        return Ok(new AuthResponse { Token = "dummy-token-for-now", User = userDto });
     }
 
-    // PUT: api/users/{username} : Updates an existing user by their username
-    [HttpPut("{username}")]
-    public async Task<IActionResult> Update(string username, [FromBody] User updatedUser)
+    /// <summary>
+    /// Updates user profile details. 
+    /// If the City has changed, it automatically re-geocodes the location to update map coordinates.
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateUserDto updatedDto)
     {
-        var existingUser = await _context.GetUserByUsername(username);
+        var existingUser = await _usersService.GetByIdAsync(id);
         if (existingUser is null) return NotFound();
 
-        if (updatedUser.City is not null && updatedUser.Region is not null && (updatedUser.City != existingUser.City || updatedUser.Region != existingUser.City))
+        double[]? newCoords = null;
+
+        // Optimization: Only call the Geocoding API if the location text has actually changed.
+        // This saves API credits/rate limits for Nominatim.
+        if (updatedDto.City != null && updatedDto.City != existingUser.City)
         {
-            using var client = new HttpClient();
-
-            client.DefaultRequestHeaders.Add("User-Agent", "FindIT/1.0 (a_ramsden203976@fanshaweonline.ca)");
-
-            string query = Uri.EscapeDataString($"{updatedUser.City}, {updatedUser.Region}");
-            string url = $"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1";
-
-            try
+            var coords = await _geocodingService.GetCoordinatesAsync(updatedDto.City, updatedDto.Region ?? "");
+            if (coords.HasValue)
             {
-                var response = await client.GetFromJsonAsync<List<NominatimResponse>>(url);
-
-                if (response != null && response.Count > 0)
-                {
-                    updatedUser.Latitude = double.Parse(response[0].Lat, System.Globalization.CultureInfo.InvariantCulture);
-                    updatedUser.Longitude = double.Parse(response[0].Lon, System.Globalization.CultureInfo.InvariantCulture);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Geocoding failed: {ex.Message}");
+                // MongoDB expects [Longitude, Latitude] for GeoJSON queries
+                newCoords = new[] { coords.Value.Lon, coords.Value.Lat };
             }
         }
 
-        updatedUser.Id = existingUser.Id;
-        updatedUser.Password = existingUser.Password;
-        await _context.UpdateUserByUsername(username, updatedUser);
-        return Ok("Update successful!");
+        await _usersService.UpdateProfileAsync(id, updatedDto, newCoords);
+        return Ok("Profile updated successfully.");
     }
 
-    // DELETE: api/users/{username} : Deletes a user by their username
-    [HttpDelete("{username}")]
-    public async Task<IActionResult> Delete(string username)
+    /// <summary>
+    /// Retrieves a ranked list of potential matches for a specific user.
+    /// </summary>
+    /// <param name="id">The ID of the user seeking matches.</param>
+    [HttpGet("{id}/matches")]
+    public async Task<IActionResult> GetMatches(string id)
     {
-        var user = await _context.GetUserByUsername(username);
-        if (user == null) return NotFound();
+        var currentUser = await _usersService.GetByIdAsync(id);
+        if (currentUser == null) return NotFound();
 
-        await _context.DeleteUserByUsername(username);
-        return Ok("Delete successful!");
+        // Step 1: Query MongoDB for users within the preferred age, gender, and distance.
+        // This handles the "hard" requirements.
+        var potentialMatches = await _usersService.GetPotentialMatchesAsync(currentUser);
+
+        // Step 2: Use MatchingService to sort the results based on "soft" criteria (Skills/Interests).
+        var scores = _matchingService.GetMatches(currentUser, potentialMatches);
+
+        return Ok(scores);
     }
 
-    // For skills and tags
-
-    // PATCH: api/users/{username}/skills: Partial update to add multiple skills to the user's skill list
-    [HttpPatch("{username}/skills")]
-    public async Task<IActionResult> AddSkills(string username, [FromBody] List<string> skills)
+    /// <summary>
+    /// Maps an internal 'User' entity to a 'UserPublicDto'.
+    /// Essential for security to prevent internal fields (like PasswordHash) from being serialized.
+    /// </summary>
+    private static UserPublicDto MapToPublicDto(User user) => new()
     {
-        if (skills == null || !skills.Any())
-            return BadRequest("No skills provided.");
-
-        var user = await _context.GetUserByUsername(username);
-        if (user == null) return NotFound("User not found.");
-
-        await _context.AddSkillsByUsername(username, skills);
-
-        // Fetch the updated user to return the new list to the frontend
-        var updatedUser = await _context.GetUserByUsername(username);
-        return Ok(new
-        {
-            message = "Skills updated successfully.",
-            skills = updatedUser?.Skills
-        });
-    }
-
-    // PATCH: api/users/{username}/interests: Partial update to add multiple interests to the user's interest list
-    [HttpPatch("{username}/interests")]
-    public async Task<IActionResult> AddInterests(string username, [FromBody] List<string> interests)
-    {
-        if (interests == null || !interests.Any())
-            return BadRequest("No interests provided.");
-
-        var user = await _context.GetUserByUsername(username);
-        if (user == null) return NotFound("User not found.");
-
-        await _context.AddInterestsByUsername(username, interests);
-
-        var updatedUser = await _context.GetUserByUsername(username);
-        return Ok(new
-        {
-            message = "Interests updated successfully.",
-            interests = updatedUser?.Interests
-        });
-    }
-
-
+        Id = user.Id!,
+        Username = user.Username,
+        FirstName = user.FirstName,
+        Gender = user.Gender,
+        Age = user.Age,
+        City = user.City,
+        Interests = user.Interests,
+        Skills = user.Skills
+    };
 }
