@@ -135,5 +135,29 @@ public class UsersController : ControllerBase
         });
     }
 
+    [HttpPut("{username}/profile")]
+    public async Task<IActionResult> UpdateProfile(string username, [FromBody] UpdatedUserProfile data)
+    {
+        var user = await _context.GetUserByUsername(username);
 
+        if (user == null)
+            return NotFound();
+
+        // Update ONLY safe fields
+        user.FirstName = data.FirstName;
+        user.LastName = data.LastName;
+        user.Gender = data.Gender;
+        user.Orientation = data.Orientation;
+        user.City = data.City;
+        user.Region = data.Region;
+        user.Occupation = data.Occupation;
+        user.Notes = data.Notes;
+
+        user.Skills = data.Skills ?? new List<string>();
+        user.Interests = data.Interests ?? new List<string>();
+
+        await _context.UpdateUser(user.Id, user);
+
+        return Ok(user);
+    }
 }
