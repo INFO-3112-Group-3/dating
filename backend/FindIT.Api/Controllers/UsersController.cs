@@ -2,6 +2,7 @@ using FindIT.Api.DTOs;
 using FindIT.Api.Entities;
 using FindIT.Api.Helpers;
 using FindIT.Api.Services;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FindIT.Api.Controllers;
@@ -52,16 +53,31 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         // Validation: Prevent duplicate accounts
-        if (await _usersService.GetByUsernameAsync(request.Username) != null)
+        if (await _usersService.GetByEmailAsync(request.Email) != null)
             return BadRequest("Username already exists.");
 
         var newUser = new User
         {
-            Username = request.Username,
             Email = request.Email,
             FirstName = request.FirstName,
-            LastName = request.LastName
+            LastName = request.LastName,
+            Salutation = request.Salutation,
+            ContactInfo = request.ContactInfo,
+            ContactMethod = request.ContactMethod
         };
+
+        //currently doing jack shit
+        if (request.Gender == "Male")
+        {
+            newUser.Gender = Gender.Male;
+        }
+        if (request.Gender == "Female")
+        {
+            newUser.Gender = Gender.Female;
+        }
+
+        //will calculate age based on brithday entered... for now just setting it to 69 cause funny number
+        newUser.Age = 69;
 
         // Note: Password hashing occurs inside the service layer
         await _usersService.CreateAsync(newUser, request.Password);
