@@ -16,4 +16,12 @@
         Bisexual,
         Pansexual
     }
+
+    public enum ContactMethod
+    {
+        Email,
+        Phone,
+        MessagingHandle,
+        SocialProfile
+    }
 }

@@ -6,10 +6,14 @@ namespace FindIT.Api.DTOs;
 public class UserPublicDto
 {
     public string Id { get; set; } = null!;
+    public string? Salutation { get; set; } // "Mr.", "Ms.", "Dr."
+    public string? Nickname { get; set; }
     public string Username { get; set; } = null!;
     public string? FirstName { get; set; }
     public Gender Gender { get; set; }
     public int Age { get; set; }
+    public ContactMethod PreferredContact { get; set; } = ContactMethod.Email;
+    public string? ContactIdentifier { get; set; }
     public string? City { get; set; }
     public List<string> Interests { get; set; } = new();
     public List<string> Skills { get; set; } = new();

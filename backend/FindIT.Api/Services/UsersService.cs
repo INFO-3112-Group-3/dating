@@ -70,6 +70,12 @@ public class UsersService
         var updateDefinitions = new List<UpdateDefinition<User>>();
 
         // Only add fields to the update command if they are explicitly provided in the request
+        if (updates.Salutation != null)
+            updateDefinitions.Add(updateBuilder.Set(u => u.Salutation, updates.Salutation));
+
+        if (updates.Nickname != null)
+            updateDefinitions.Add(updateBuilder.Set(u => u.Nickname, updates.Nickname));
+
         if (updates.FirstName != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.FirstName, updates.FirstName));
 
@@ -81,6 +87,12 @@ public class UsersService
 
         if (updates.Age.HasValue)
             updateDefinitions.Add(updateBuilder.Set(u => u.Age, updates.Age.Value));
+
+        if (updates.PreferredContact.HasValue)
+            updateDefinitions.Add(updateBuilder.Set(u => u.PreferredContact, updates.PreferredContact.Value));
+
+        if (updates.ContactIdentifier != null)
+            updateDefinitions.Add(updateBuilder.Set(u => u.ContactIdentifier, updates.ContactIdentifier));
 
         if (updates.City != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.City, updates.City));
@@ -147,40 +159,48 @@ public class UsersService
     public async Task<List<User>> GetPotentialMatchesAsync(User currentUser)
     {
         var builder = Builders<User>.Filter;
+        var today = DateTime.Today;
 
-        // Start by ensuring we don't match a user with themselves
+        // --- 1. Calculate Date Ranges for the "Potential Match" ---
+        // Someone is within currentUser's Age Prefs if their DOB is between these dates:
+        var matchMinBirthDate = today.AddYears(-currentUser.Preferences.MaxAge - 1).AddDays(1);
+        var matchMaxBirthDate = today.AddYears(-currentUser.Preferences.MinAge);
+
+        // --- 2. Calculate Date Ranges for "Current User" (Mutual Match check) ---
+        // For the match to want the CurrentUser, the CurrentUser's DOB must fit 
+        // inside the match's Preference range.
+        // We use currentUser.DateOfBirth as the anchor for the filters below.
+
+        // Base Filter: Don't match with self
         var filters = builder.Ne(u => u.Id, currentUser.Id);
 
-        // Age Filter: Ensures the match's age is within the current user's range
-        // AND the current user's age is within the match's preferred range.
-        filters &= builder.Gte(u => u.Age, currentUser.Preferences.MinAge);
-        filters &= builder.Lte(u => u.Age, currentUser.Preferences.MaxAge);
+        // DOB Filter: Does the candidate fit the current user's age requirements?
+        filters &= builder.Gte(u => u.DateOfBirth, matchMinBirthDate);
+        filters &= builder.Lte(u => u.DateOfBirth, matchMaxBirthDate);
+
+        // Mutual Age Filter: Does the current user fit the candidate's age requirements?
+        // Logic: Candidate's MinAge must be <= CurrentUser.Age AND Candidate's MaxAge must be >= CurrentUser.Age
         filters &= builder.Lte(u => u.Preferences.MinAge, currentUser.Age);
         filters &= builder.Gte(u => u.Preferences.MaxAge, currentUser.Age);
 
-        // Gender Filter: Checks if the match's gender is in the current user's list
-        // and if the current user's gender is in the match's 'InterestedIn' list.
-        if (currentUser.Preferences.InterestedIn != null && currentUser.Preferences.InterestedIn.Count > 0)
+        // Gender & Mutual Interest Filter
+        if (currentUser.Preferences.InterestedIn?.Any() == true)
         {
             filters &= builder.In(u => u.Gender, currentUser.Preferences.InterestedIn);
         }
         filters &= builder.AnyEq(u => u.Preferences.InterestedIn, currentUser.Gender);
 
-        // Distance Filter: Converts MaxDistance (KM) to Meters for the GeoJSON query.
+        // Distance Filter
         double distanceInMeters = currentUser.Preferences.MaxDistance * 1000;
-
-        // MongoDB GeoJSON format: [Longitude, Latitude]
         var point = MongoDB.Driver.GeoJsonObjectModel.GeoJson.Point(
             MongoDB.Driver.GeoJsonObjectModel.GeoJson.Geographic(
-                currentUser.Location[0], // Longitude
-                currentUser.Location[1]  // Latitude
+                currentUser.Location[0],
+                currentUser.Location[1]
             )
         );
 
-        // $nearSphere sorts results by distance automatically.
-        filters &= builder.NearSphere(u => u.Location, point, distanceInMeters);
+        filters &= builder.NearSphere(u => u.Location, point, maxDistance: distanceInMeters);
 
-        // Execute and return the first 100 results to keep response times fast.
         return await _usersCollection.Find(filters).Limit(100).ToListAsync();
     }
 }
