@@ -10,13 +10,16 @@ public static class MappingExtensions
         return new UserPublicDto
         {
             Id = user.Id!,
-            Username = user.Username,
+            Salutation = user.Salutation,
             FirstName = user.FirstName,
             Gender = user.Gender,
             Age = user.Age,
-            City = user.City,
+            ContactInfo = user.ContactInfo,
             Interests = user.Interests,
-            Skills = user.Skills
+            Skills = user.Skills,
+            ContactMethod = user.ContactMethod,
+            LastName = user.LastName,
+
         };
     }
 }
