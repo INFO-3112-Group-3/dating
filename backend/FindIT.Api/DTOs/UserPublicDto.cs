@@ -1,25 +1,28 @@
 ﻿using FindIT.Api.Entities;
-using FindIT.Api.Models;
-using System.Text.Json.Serialization;
 
 namespace FindIT.Api.DTOs;
 
 // This DTO is meant for public profiles, so we exclude sensitive info
 public class UserPublicDto
 {
-    public string Id { get; set; } = null!;
-    public string? Salutation { get; set; } // "Mr.", "Ms.", "Dr."
-    public string? Nickname { get; set; }
-    public string Username { get; set; } = null!;
+    public string? Id {get;set;}
+    public string Email { get; set; } = null!;
+    public bool IsPaidUser { get; set; }
     public string? FirstName { get; set; }
-    public Gender Gender { get; set; }
-    [JsonConverter(typeof(DateOnlyJsonConverter))]
-    public DateTime DateOfBirth { get; set; }
-    public int Age  { get; set; }
-    public ContactMethod PreferredContact { get; set; } = ContactMethod.Email;
-    public string? ContactIdentifier { get; set; }
+    public string? LastName { get; set; }
+    public string? Salutation {get; set;}
+    public string? ContactInfo {get; set;}
+    public string? ContactMethod {get; set;}
+    public Gender? Gender { get; set; }
+
+    public int Age { get; set; }
+
     public string? City { get; set; }
-    public List<string> Interests { get; set; } = new();
+    public string? Region { get; set; }
+
+    // GeoJSON Point: [Longitude, Latitude]
+
+    public List<string> Preferences { get; set; } = new();
     public List<string> Skills { get; set; } = new();
 
     // can add last name, email, etc. if needed, but be cautious about privacy
