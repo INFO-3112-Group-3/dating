@@ -22,7 +22,7 @@ public class UserPublicDto
 
     // GeoJSON Point: [Longitude, Latitude]
 
-    public List<string> Interests { get; set; } = new();
+    public List<string> Preferences { get; set; } = new();
     public List<string> Skills { get; set; } = new();
 
     // can add last name, email, etc. if needed, but be cautious about privacy
