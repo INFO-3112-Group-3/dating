@@ -52,18 +52,28 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         // Validation: Prevent duplicate accounts
-        if (await _usersService.GetByUsernameAsync(request.Username) != null)
-            return BadRequest("Username already exists.");
+        if (await _usersService.GetByEmailAsync(request.Email) != null)
+            return BadRequest("Email already exists.");
 
         var newUser = new User
         {
-            Username = request.Username,
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
+            Salutation = request.Salutation,
+            ContactMethod = request.ContactMethod,
+            ContactInfo = request.ContactInfo,
             DateOfBirth = request.DateOfBirth,
         };
 
+        if (request.Gender == "Male")
+        {
+            newUser.Gender = Gender.Male;
+        }
+        else if (request.Gender == "Female")
+        {
+            newUser.Gender = Gender.Female;
+        }
         // Note: Password hashing occurs inside the service layer
         await _usersService.CreateAsync(newUser, request.Password);
         return Ok("Registration successful.");
@@ -144,9 +154,10 @@ public class UsersController : ControllerBase
         var currentUser = await _usersService.GetByIdAsync(id);
         if (currentUser == null) return NotFound();
 
-        // Step 1: Query MongoDB for users within the preferred age, gender, and distance.
-        // This handles the "hard" requirements.
-        var potentialMatches = await _usersService.GetPotentialMatchesAsync(currentUser);
+        //gathers all of the Users from teh data base, and removes the current user
+        var potentialMatches = await _usersService.GetAllAsync();
+
+        potentialMatches.Remove(currentUser);
 
         // Step 2: Use MatchingService to sort the results based on "soft" criteria (Skills/Interests).
         var scores = _matchingService.GetMatches(currentUser, potentialMatches);

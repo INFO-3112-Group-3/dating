@@ -20,10 +20,13 @@ public class UserPublicDto
     public string? City { get; set; }
     public string? Region { get; set; }
 
-    // GeoJSON Point: [Longitude, Latitude]
+    public DateTime DateOfBirth {get;set;}
 
+    // GeoJSON Point: [Longitude, Latitude]
     public List<string> Interests { get; set; } = new();
     public List<string> Skills { get; set; } = new();
+
+    public List<UserPreference> Preferences {get; set;} = new();
 
     // can add last name, email, etc. if needed, but be cautious about privacy
 }

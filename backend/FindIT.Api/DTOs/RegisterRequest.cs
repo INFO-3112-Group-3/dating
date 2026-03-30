@@ -12,5 +12,5 @@ public class RegisterRequest
     public string? ContactMethod {get; set;}
     public string? Gender {get; set;}
     //currently a string, and doesn't do jack shit
-    public string? Birthday{get;set;}
+    public DateTime DateOfBirth{get;set;}
 }

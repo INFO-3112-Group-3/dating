@@ -11,17 +11,18 @@ public static class MappingExtensions
         {
             Id = user.Id!,
             Salutation = user.Salutation,
-            Nickname = user.Nickname,
-            Username = user.Username,
             FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
             Gender = user.Gender,
             DateOfBirth = user.DateOfBirth,
             Age = user.Age,
-            PreferredContact = user.PreferredContact,
-            ContactIdentifier = user.ContactIdentifier,
+            ContactMethod = user.ContactMethod,
+            ContactInfo = user.ContactInfo,
             City = user.City,
             Interests = user.Interests,
-            Skills = user.Skills
+            Skills = user.Skills,
+            Preferences = user.Preferences
         };
     }
 }

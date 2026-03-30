@@ -1,7 +1,9 @@
 ﻿using FindIT.Api.DTOs;
 using FindIT.Api.Entities;
 using FindIT.Api.Helpers;
-
+using System.Collections.Generic;
+using FindIT.Api.Models;
+using FluentAssertions;
 namespace FindIT.Api.Services;
 
 /// <summary>
@@ -11,15 +13,62 @@ namespace FindIT.Api.Services;
 /// </summary>
 public class MatchingService
 {
+    //so uhh don't mind this... this is cursed as hell BUT yes.. this does store functions in a dictonary
+    private Dictionary<string,Func<User,string,int,int>> preferenceFunctions = new Dictionary<string, Func<User,string,int,int>>();
+
+    //THIS is where you will put the private functions for the different criteria checks
+    private int GenderPref(User user,string preferenceInfo, int importance)
+    {
+        if (user.Gender.ToString() == preferenceInfo)
+        {
+            return importance;
+        }
+        else
+        {
+            return (0-importance);
+        }
+    }
+    private int AboveAgePref(User user,string preferenceInfo, int importance)
+    {
+        if (user.Age < int.Parse(preferenceInfo))
+        {
+            return importance;
+        }
+        else
+        {
+            return (0-importance);
+        }
+    }
+    private int BelowAgePref(User user,string preferenceInfo, int importance)
+    {
+        if (user.Age > int.Parse(preferenceInfo))
+        {
+            return importance;
+        }
+        else
+        {
+            return (0-importance);
+        }
+    }
+    //constructor
+    //when you create a new preference method, add it here with the coresponding preference "tag" for the key
+    public MatchingService()
+    {
+        preferenceFunctions.Add("Gender", GenderPref);
+        preferenceFunctions.Add("AboveAge",AboveAgePref);
+        preferenceFunctions.Add("BelowAge",BelowAgePref);
+    }
+
+
     /// <summary>
     /// Processes a list of candidate users and ranks them by compatibility score.
     /// </summary>
     /// <param name="currentUser">The user seeking a match.</param>
     /// <param name="databaseResults">The pre-filtered list of users from MongoDB.</param>
     /// <returns>A list of MatchScore objects sorted from highest to lowest score.</returns>
-    public List<MatchScore> GetMatches(User currentUser, List<User> databaseResults)
+    public List<MatchScore> GetMatches(User currentUser,List<User> databaseResults)
     {
-        return databaseResults
+        List<MatchScore> matches = databaseResults
             .Select(candidate => new MatchScore
             {
                 Profile = candidate.ToPublicDto()!,
@@ -29,6 +78,11 @@ public class MatchingService
             // Sort so the most compatible users appear first in the UI
             .OrderByDescending(m => m.TotalScore)
             .ToList();
+
+            //can change to to finer tweak scores
+            matches.RemoveAll(x => x.TotalScore < 3);
+
+            return matches;
     }
 
     /// <summary>
@@ -40,18 +94,17 @@ public class MatchingService
     /// <returns>An integer representing the total compatibility points.</returns>
     private int CalculateScore(User user, User candidate)
     {
+        // eidting 
         int score = 0;
 
-        // 1. Shared Interests: High-level compatibility.
-        // Intersect finds common strings between both lists.
-        // Weight: 10 points per shared interest.
-        int sharedInterests = user.Interests.Intersect(candidate.Interests).Count();
-        score += (sharedInterests * 10);
-
-        // 2. Shared Skills: Professional/Functional compatibility.
-        // Weight: 5 points per shared skill.
-        int sharedSkills = user.Skills.Intersect(candidate.Skills).Count();
-        score += (sharedSkills * 5);
+        //running through the users criteria
+        foreach (UserPreference pref in user.Preferences)
+        {
+            if(preferenceFunctions.ContainsKey(pref.PreferenceType!))
+            {
+                score += preferenceFunctions[pref.PreferenceType!](candidate,pref.PreferenceInfo!,pref.Importance);
+            }
+        }
 
         return score;
     }

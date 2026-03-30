@@ -12,8 +12,6 @@ public class User
     public string? Id { get; set; }
 
     public string? Salutation { get; set; } // "Mr.", "Ms.", "Dr."
-    public string? Nickname { get; set; }
-    public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string PasswordHash { get; set; } = null!;
     public bool IsPaidUser { get; set; }
@@ -40,8 +38,8 @@ public class User
         }
     }
 
-    public ContactMethod PreferredContact { get; set; } = ContactMethod.Email;
-    public string? ContactIdentifier { get; set; }
+    public string? ContactMethod { get; set; }
+    public string? ContactInfo { get; set; }
 
     public string? City { get; set; }
     public string? Region { get; set; }
@@ -52,5 +50,5 @@ public class User
     public List<string> Interests { get; set; } = new();
     public List<string> Skills { get; set; } = new();
 
-    public UserPreferences Preferences { get; set; } = new();
+    public List<UserPreference> Preferences { get; set; } = new();
 }
