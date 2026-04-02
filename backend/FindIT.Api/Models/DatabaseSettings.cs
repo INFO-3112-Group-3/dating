@@ -15,5 +15,7 @@
         public string SubscriptionsCollectionName { get; set; } = null!;
 
         public string SkillTagsCollectionName { get; set; } = null!;
+
+        public string MatchHistoryCollectionName { get; set; } = null!;
     }
 }

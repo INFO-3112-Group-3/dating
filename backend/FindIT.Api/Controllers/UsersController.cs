@@ -161,7 +161,8 @@ public class UsersController : ControllerBase
         potentialMatches.Remove(currentUser);
 
         // Step 2: Use MatchingService to sort the results based on "soft" criteria (Skills/Interests).
-        var scores = _matchingService.GetMatches(currentUser, potentialMatches);
+        // change to async to help add logging to the database for the dashboard analytics
+        var scores = await _matchingService.GetMatches(currentUser, potentialMatches);
 
         return Ok(scores);
     }
