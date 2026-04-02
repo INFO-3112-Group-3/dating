@@ -27,6 +27,8 @@ builder.Services.AddSingleton<UsersService>();
 builder.Services.AddSingleton<PaymentService>();
 builder.Services.AddSingleton<SkillTagsService>();
 builder.Services.AddSingleton<MatchingService>();
+builder.Services.AddSingleton<DashboardService>();
+
 
 // Register HttpClient and the Geocoding Service
 builder.Services.AddHttpClient();

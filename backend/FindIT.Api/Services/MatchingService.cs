@@ -1,9 +1,10 @@
 ﻿using FindIT.Api.DTOs;
 using FindIT.Api.Entities;
 using FindIT.Api.Helpers;
-using System.Collections.Generic;
 using FindIT.Api.Models;
 using FluentAssertions;
+using MongoDB.Driver;
+using System.Collections.Generic;
 namespace FindIT.Api.Services;
 
 /// <summary>
@@ -15,6 +16,9 @@ public class MatchingService
 {
     //so uhh don't mind this... this is cursed as hell BUT yes.. this does store functions in a dictonary
     private Dictionary<string,Func<User,string,int,int>> preferenceFunctions = new Dictionary<string, Func<User,string,int,int>>();
+
+    // MongoDB collections for logging match history -> this is for the dashboard and analytics, not for the matching process itself
+    private readonly IMongoCollection<MatchHistory> _matchHistoryCollection;
 
     //THIS is where you will put the private functions for the different criteria checks
     private int GenderPref(User user,string preferenceInfo, int importance)
@@ -52,8 +56,11 @@ public class MatchingService
     }
     //constructor
     //when you create a new preference method, add it here with the coresponding preference "tag" for the key
-    public MatchingService()
+    public MatchingService(IMongoDatabase database)
     {
+        // Initialize the collection based on your DatabaseSettings
+        _matchHistoryCollection = database.GetCollection<MatchHistory>("MatchHistory");
+
         preferenceFunctions.Add("Gender", GenderPref);
         preferenceFunctions.Add("AboveAge",AboveAgePref);
         preferenceFunctions.Add("BelowAge",BelowAgePref);
@@ -62,11 +69,13 @@ public class MatchingService
 
     /// <summary>
     /// Processes a list of candidate users and ranks them by compatibility score.
+    /// Logging the matches to the database for dashboard analytics. This allows us to track which matches are being generated and how users are interacting with them, providing valuable insights for improving our matching algorithms and user experience over time.
     /// </summary>
     /// <param name="currentUser">The user seeking a match.</param>
     /// <param name="databaseResults">The pre-filtered list of users from MongoDB.</param>
     /// <returns>A list of MatchScore objects sorted from highest to lowest score.</returns>
-    public List<MatchScore> GetMatches(User currentUser,List<User> databaseResults)
+    /// *** change method to be async, Task method that also logs the matches to the database for the dashboard analytics
+    public async Task<List<MatchScore>> GetMatches(User currentUser,List<User> databaseResults)
     {
         List<MatchScore> matches = databaseResults
             .Select(candidate => new MatchScore
@@ -82,7 +91,21 @@ public class MatchingService
             //can change to to finer tweak scores
             matches.RemoveAll(x => x.TotalScore < 3);
 
-            return matches;
+        // This is for dashboard analytics. Persist these matches to the database for the Dashboard
+        foreach (var match in matches)
+        {
+            var history = new MatchHistory
+            {
+                UserAId = currentUser.Id!,
+                UserBId = match.Profile.Id!,
+                MatchScore = match.TotalScore,
+                CommunicationExposed = currentUser.IsPaidUser,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _matchHistoryCollection.InsertOneAsync(history);
+        }
+
+        return matches;
     }
 
     /// <summary>
