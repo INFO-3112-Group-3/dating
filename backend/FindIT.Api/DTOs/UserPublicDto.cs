@@ -6,6 +6,7 @@ namespace FindIT.Api.DTOs;
 public class UserPublicDto
 {
     public string? Id {get;set;}
+    public string? Nickname {get;set;}
     public string Email { get; set; } = null!;
     public bool IsPaidUser { get; set; }
     public string? FirstName { get; set; }

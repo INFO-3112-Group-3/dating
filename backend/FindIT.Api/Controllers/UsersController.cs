@@ -57,6 +57,7 @@ public class UsersController : ControllerBase
 
         var newUser = new User
         {
+            Nickname = request.Nickname,
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,

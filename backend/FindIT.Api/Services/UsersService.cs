@@ -72,14 +72,14 @@ public class UsersService
         if (updates.FirstName != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.FirstName, updates.FirstName));
 
+        if (updates.Nickname != null)
+            updateDefinitions.Add(updateBuilder.Set(u => u.Nickname, updates.Nickname));
+
         if (updates.LastName != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.LastName, updates.LastName));
 
         if (updates.Gender.HasValue)
             updateDefinitions.Add(updateBuilder.Set(u => u.Gender, updates.Gender.Value));
-
-        if (updates.DateOfBirth != null)
-            updateDefinitions.Add(updateBuilder.Set(u => u.DateOfBirth, updates.DateOfBirth));
 
         if (updates.ContactMethod != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.ContactMethod, updates.ContactMethod));

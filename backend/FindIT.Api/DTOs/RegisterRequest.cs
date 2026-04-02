@@ -3,6 +3,7 @@
 // This DTO is used for user registration. It includes necessary fields for creating a new user account.
 public class RegisterRequest
 {
+    public string? Nickname { get;set; }
     public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? FirstName { get; set; }
