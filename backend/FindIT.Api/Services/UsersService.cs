@@ -99,6 +99,9 @@ public class UsersService
         if (newLocation != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.Location, newLocation));
 
+        if (updates.Skills.Count > 0)
+            updateDefinitions.Add(updateBuilder.Set(u => u.Skills, updates.Skills));
+
         // Prevent unnecessary database round-trips if no changes were detected
         if (updateDefinitions.Count == 0) return;
 
