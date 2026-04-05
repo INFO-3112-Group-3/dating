@@ -28,4 +28,9 @@ public class SkillTagsService
     // Bulk create (handy for seeding your database the first time)
     public async Task CreateMultipleAsync(List<SkillTags> tags) =>
         await _skillTagsCollection.InsertManyAsync(tags);
+
+    public async Task DeleteAllAsync()
+    {
+      await _skillTagsCollection.DeleteManyAsync(_ => true);
+    }
 }
