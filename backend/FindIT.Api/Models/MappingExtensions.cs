@@ -3,6 +3,9 @@ using FindIT.Api.Entities;
 
 namespace FindIT.Api.Helpers;
 
+/// <summary>
+/// I guess this converts user to public user dto? couldof just put it inside the user/{id} get endpoint.
+/// </summary>
 public static class MappingExtensions
 {
     public static UserPublicDto ToPublicDto(this User user)
@@ -22,7 +25,9 @@ public static class MappingExtensions
             City = user.City,
             Interests = user.Interests,
             Skills = user.Skills,
-            Preferences = user.Preferences
+            Preferences = user.Preferences,
+            Bio = user.Bio,
+            ProfilePictureBase64 = user.ProfilePictureBase64
         };
     }
 }

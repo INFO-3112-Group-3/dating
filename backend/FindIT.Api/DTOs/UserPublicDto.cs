@@ -29,5 +29,7 @@ public class UserPublicDto
 
     public List<UserPreference> Preferences {get; set;} = new();
 
-    // can add last name, email, etc. if needed, but be cautious about privacy
+    public string? Bio { get; set; }
+    public string? ProfilePictureBase64 { get; set; }
+  // can add last name, email, etc. if needed, but be cautious about privacy
 }

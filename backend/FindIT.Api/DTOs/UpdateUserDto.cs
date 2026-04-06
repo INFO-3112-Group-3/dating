@@ -16,8 +16,11 @@ public class UpdateUserDto
     public string? City { get; set; }
     public string? Region { get; set; }
 
-    public List<string> Interests { get; set; } = new();
-    public List<string> Skills { get; set; } = new();
+    public List<string>? Interests { get; set; }
+    public List<string>? Skills { get; set; }
 
-    public List<UserPreference>? Preferences {get;set;} = new();
+    public List<UserPreference>? Preferences {get;set;}
+
+    public string? Bio { get; set; }
+    public string? ProfilePictureBase64 { get; set; }
 }

@@ -99,11 +99,19 @@ public class UsersService
         if (newLocation != null)
             updateDefinitions.Add(updateBuilder.Set(u => u.Location, newLocation));
 
-        if (updates.Skills.Count > 0)
-            updateDefinitions.Add(updateBuilder.Set(u => u.Skills, updates.Skills));
+        if (updates.Skills != null && updates.Skills.Count > 0)
+          updateDefinitions.Add(updateBuilder.Set(u => u.Skills, updates.Skills));
 
-        // Prevent unnecessary database round-trips if no changes were detected
-        if (updateDefinitions.Count == 0) return;
+        if (updates.Interests != null && updates.Interests.Count > 0)
+          updateDefinitions.Add(updateBuilder.Set(u => u.Interests, updates.Interests));
+
+        if (updates.Bio != null)
+                updateDefinitions.Add(updateBuilder.Set(u => u.Bio, updates.Bio));
+        if (updates.ProfilePictureBase64 != null)
+          updateDefinitions.Add(updateBuilder.Set(u => u.ProfilePictureBase64, updates.ProfilePictureBase64));
+    Console.WriteLine($"BIO: {updates.Bio}");
+    // Prevent unnecessary database round-trips if no changes were detected
+    if (updateDefinitions.Count == 0) return;
 
         // Combine all 'Set' operations into a single atomic update for efficiency and consistency
         var combinedUpdate = updateBuilder.Combine(updateDefinitions);

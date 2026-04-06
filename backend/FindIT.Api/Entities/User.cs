@@ -52,4 +52,7 @@ public class User
     public List<string> Skills { get; set; } = new();
 
     public List<UserPreference> Preferences { get; set; } = new();
+
+    public string? Bio { get; set; } = "";
+    public string? ProfilePictureBase64 { get; set; }
 }
