@@ -14,6 +14,7 @@ public static class MappingExtensions
         {
             Id = user.Id!,
             Salutation = user.Salutation,
+            Nickname = user.Nickname,
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email,
@@ -23,6 +24,7 @@ public static class MappingExtensions
             ContactMethod = user.ContactMethod,
             ContactInfo = user.ContactInfo,
             City = user.City,
+            Region = user.Region,
             Interests = user.Interests,
             Skills = user.Skills,
             Preferences = user.Preferences,
