@@ -29,7 +29,9 @@ public static class MappingExtensions
             Skills = user.Skills,
             Preferences = user.Preferences,
             Bio = user.Bio,
-            ProfilePictureBase64 = user.ProfilePictureBase64
+            ProfilePictureBase64 = user.ProfilePictureBase64,
+            IsAdminUser = user.IsAdminUser,
+            IsPaidUser = user.IsPaidUser,
         };
     }
 }

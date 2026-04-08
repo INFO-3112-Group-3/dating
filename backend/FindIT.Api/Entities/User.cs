@@ -17,6 +17,8 @@ public class User
     public string PasswordHash { get; set; } = null!;
     public bool IsPaidUser { get; set; }
 
+    public bool IsAdminUser { get; set; }
+
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
 
