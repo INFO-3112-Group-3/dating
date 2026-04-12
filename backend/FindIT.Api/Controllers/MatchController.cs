@@ -41,7 +41,7 @@ namespace FindIT.Api.Controllers
         [HttpPatch("{id}/rate/{targetId}")]
         public async Task<IActionResult> Rate(string id, string targetId, [FromBody] int rating)
         {
-            if (rating > 1 || rating < 5) return BadRequest("Rating must be between 1 and 5");
+            if (rating < 1 || rating > 5) return BadRequest("Rating must be between 1 and 5");
 
             await _matchesService.SetRatingAsync(id, targetId, rating);
             return Ok();
