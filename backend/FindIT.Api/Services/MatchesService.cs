@@ -47,5 +47,20 @@ namespace FindIT.Api.Services
             var update = Builders<UserMatch>.Update.Set(m => m.Rating, rating);
             await _matchesCollection.UpdateOneAsync(filter, update);
         }
+
+        public async Task<List<string>> GetInteractedUserIdsAsync(string userId)
+        {
+            // Find all matches where the user is EITHER the requester or the target
+            var matches = await _matchesCollection
+                .Find(m => m.RequesterId == userId || m.TargetId == userId)
+                .ToListAsync();
+
+            // Collect IDs of the "other" person in all these interactions
+            var interactedIds = matches.Select(m =>
+                m.RequesterId == userId ? m.TargetId : m.RequesterId
+            ).Distinct().ToList();
+
+            return interactedIds;
+        }
     }
 }

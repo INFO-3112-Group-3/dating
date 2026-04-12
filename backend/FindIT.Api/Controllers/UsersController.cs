@@ -17,15 +17,17 @@ public class UsersController : ControllerBase
     private readonly UsersService _usersService;
     private readonly IGeocodingService _geocodingService;
     private readonly MatchingService _matchingService;
+    private readonly MatchesService _matchesService;
 
     /// <summary>
     /// Dependencies are injected via the standard ASP.NET Core DI container.
     /// </summary>
-    public UsersController(UsersService usersService, IGeocodingService geocodingService, MatchingService matchingService)
+    public UsersController(UsersService usersService, IGeocodingService geocodingService, MatchingService matchingService, MatchesService matchesService)
     {
         _usersService = usersService;
         _geocodingService = geocodingService;
         _matchingService = matchingService;
+        _matchesService = matchesService;
     }
 
     /// <summary>
@@ -155,10 +157,17 @@ public class UsersController : ControllerBase
         var currentUser = await _usersService.GetByIdAsync(id);
         if (currentUser == null) return NotFound();
 
-        //gathers all of the Users from teh data base, and removes the current user
-        var potentialMatches = await _usersService.GetAllAsync();
+        // get all users
+        var allUsers = await _usersService.GetAllAsync();
 
-        potentialMatches.Remove(currentUser);
+        // get ids of people already swiped on
+        var alreadyInteractedIds = await _matchesService.GetInteractedUserIdsAsync(id);
+
+        // filter the list
+        var potentialMatches = allUsers.Where(u =>
+            u.Id != id && // Not myself
+            !alreadyInteractedIds.Contains(u.Id!) // Not someone I've seen
+        ).ToList();
 
         // Step 2: Use MatchingService to sort the results based on "soft" criteria (Skills/Interests).
         // change to async to help add logging to the database for the dashboard analytics
