@@ -19,7 +19,7 @@ namespace FindIT.Api.Controllers
         [HttpGet("{id}/connect/{targetId}")]
         public async Task<IActionResult> Connect(string id, string targetId)
         {
-            var reverseMatch = await _matchesService.GetMatchAsync(id, targetId);
+            var reverseMatch = await _matchesService.GetMatchAsync(targetId, id);
 
             if (reverseMatch != null && reverseMatch.Status == MatchStatus.Pending)
             {
