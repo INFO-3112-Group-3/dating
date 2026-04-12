@@ -20,6 +20,13 @@ namespace FindIT.Api.Services
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<UserMatch>> GetMatchesByStatusAsync(string userId, MatchStatus status)
+        {
+            return await _matchesCollection
+                .Find(m => (m.RequesterId == userId || m.TargetId == userId) && m.Status == status)
+                .ToListAsync();
+        }
+
         public async Task CreateMatchAsync(string requesterId, string targetId, MatchStatus status)
         {
             var match = new UserMatch
@@ -40,10 +47,18 @@ namespace FindIT.Api.Services
 
         public async Task SetRatingAsync(string requesterId, string targetId, int rating)
         {
-            var filter = Builders<UserMatch>.Filter.And(
-                Builders<UserMatch>.Filter.Eq(m => m.RequesterId, requesterId),
-                Builders<UserMatch>.Filter.Eq(m => m.TargetId, targetId)
+            // Filter for the record where these two users are involved, regardless of who started it
+            var filter = Builders<UserMatch>.Filter.Or(
+                Builders<UserMatch>.Filter.And(
+                    Builders<UserMatch>.Filter.Eq(m => m.RequesterId, requesterId),
+                    Builders<UserMatch>.Filter.Eq(m => m.TargetId, targetId)
+                ),
+                Builders<UserMatch>.Filter.And(
+                    Builders<UserMatch>.Filter.Eq(m => m.RequesterId, targetId),
+                    Builders<UserMatch>.Filter.Eq(m => m.TargetId, requesterId)
+                )
             );
+
             var update = Builders<UserMatch>.Update.Set(m => m.Rating, rating);
             await _matchesCollection.UpdateOneAsync(filter, update);
         }

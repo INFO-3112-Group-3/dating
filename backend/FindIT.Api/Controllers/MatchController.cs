@@ -1,4 +1,6 @@
-﻿using FindIT.Api.Entities;
+﻿using FindIT.Api.DTOs;
+using FindIT.Api.Entities;
+using FindIT.Api.Helpers;
 using FindIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +11,12 @@ namespace FindIT.Api.Controllers
     public class MatchController : Controller
     {
         private readonly MatchesService _matchesService;
+        private readonly UsersService _usersService;
 
-        public MatchController(MatchesService matchesService)
+        public MatchController(MatchesService matchesService, UsersService usersService)
         {
             _matchesService = matchesService;
+            _usersService = usersService;
         }
 
 
@@ -45,6 +49,28 @@ namespace FindIT.Api.Controllers
 
             await _matchesService.SetRatingAsync(id, targetId, rating);
             return Ok(new { Message = "Rating submitted." });
+        }
+
+        [HttpGet("{id}/accepted")]
+        public async Task<IActionResult> GetAcceptedMatches(string id)
+        {
+            var matches = await _matchesService.GetMatchesByStatusAsync(id, MatchStatus.Accepted);
+
+            var results = new List<object>(); // Change to a generic list to hold both
+            foreach (var m in matches)
+            {
+                var targetId = m.RequesterId == id ? m.TargetId : m.RequesterId;
+                var user = await _usersService.GetByIdAsync(targetId);
+                if (user != null)
+                {
+                    results.Add(new
+                    {
+                        Profile = user.ToPublicDto(),
+                        Rating = m.Rating // Include the stored rating!
+                    });
+                }
+            }
+            return Ok(results);
         }
     }
 }
