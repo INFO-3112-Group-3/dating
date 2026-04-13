@@ -24,7 +24,6 @@ namespace FindIT.Api.Database
         private List<SkillTags> GenerateSkills()
         {
             var list = new List<SkillTags>();
-            var levels = new[] { "", "Basics", "Advanced", "Expert" };
 
             var categories = new Dictionary<string, List<string>>
             {
@@ -39,14 +38,11 @@ namespace FindIT.Api.Database
             {
                 foreach (var skillName in entry.Value)
                 {
-                    foreach (var level in levels)
+                    list.Add(new SkillTags
                     {
-                        list.Add(new SkillTags
-                        {
-                            Name = string.IsNullOrWhiteSpace(level) ? skillName : $"{skillName} {level}",
-                            Category = entry.Key
-                        });
-                    }
+                        Name = skillName,
+                        Category = entry.Key
+                    });
                 }
             }
             return list;
