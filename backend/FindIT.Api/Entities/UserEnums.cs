@@ -8,20 +8,4 @@
         NonBinary,
         Other
     }
-
-    public enum Orientation
-    {
-        Straight,
-        Gay,
-        Bisexual,
-        Pansexual
-    }
-
-    public enum ContactMethod
-    {
-        Email,
-        Phone,
-        MessagingHandle,
-        SocialProfile
-    }
 }
